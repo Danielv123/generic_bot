@@ -17,7 +17,7 @@ Whatever game you want to play.
 Setup micromamba environment:
 
 ```
-micromamba create -n bot -c pytorch -c conda-forge -c nvidia numpy matplotlib pytorch torchvision dxcam opencv pyqt pyautogui keyboard timm
+micromamba create -n bot -c pytorch -c conda-forge -c nvidia numpy matplotlib pytorch torchvision dxcam opencv pyqt pyautogui keyboard timm matplotlib
 ```
 
 Remove environment:

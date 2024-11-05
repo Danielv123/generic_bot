@@ -10,8 +10,7 @@ import glob
 import torchvision.models as models
 
 transformer = Compose([
-    Resize((480,480)),
-    CenterCrop(480),
+    transforms.ToTensor(),
     Normalize(mean =[0.485, 0.456, 0.406], std =[0.229, 0.224, 0.225] )
 ])
 
@@ -28,13 +27,7 @@ class GameDataset(Dataset):
             frames_to_use = run_frames[60:-60] if len(run_frames) > 120 else []
             self.frame_files.extend(frames_to_use)
         
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
-            # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-            Resize((480,480)),
-            CenterCrop(480),
-            Normalize(mean =[0.485, 0.456, 0.406], std =[0.229, 0.224, 0.225] )
-        ])
+        self.transform = transformer
         
     def __len__(self):
         return len(self.frame_files)
@@ -92,8 +85,8 @@ def train_model(training_run_folder, game, num_epochs=10):
     )
     
     # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
     
     # Initialize model, loss function, and optimizer
     model = GameNet().to(device)

@@ -18,7 +18,7 @@ import ast
 import glob
 
 # Local imports
-from train import GameNet
+from train import GameNet, transformer
 
 # Add global running flag
 running = True
@@ -32,7 +32,7 @@ def check_for_exit():
             sys.exit()
         time.sleep(0.1)
 
-def initialize_capture():
+def initialize_capture(preview=False):
     # Start exit detection thread
     exit_thread = threading.Thread(target=check_for_exit, daemon=True)
     exit_thread.start()
@@ -43,7 +43,7 @@ def initialize_capture():
     # First, capture full screen to find the game window
     full_screen = camera.grab()
     # Capture entire desktop screen
-    region = find_game_window(full_screen)
+    region = find_game_window(full_screen, preview=preview)
 
     return camera, region
 
@@ -155,7 +155,7 @@ def continuous_capture(camera, region, game, model=None):
     print("Capture stopped")
     os._exit(0)  # Force exit all threads
 
-def find_game_window(frame):
+def find_game_window(frame, preview=False):
     # Convert frame to HSV color space for better color detection
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
@@ -172,9 +172,10 @@ def find_game_window(frame):
     # Draw contours and show image for debugging
     cv2.drawContours(frame, contours, -1, (0, 255, 0), 2)
 
-    # cv2.imshow("Contours", frame)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    if preview: # Show the frame with contours
+        cv2.imshow("Contours", frame)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     
     if contours:
         # Find the largest contour (assuming it's the game window)
@@ -186,13 +187,7 @@ def find_game_window(frame):
 
 def predict_keys(model, frame):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-            # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-        Resize((480,480)),
-        CenterCrop(480),
-        Normalize(mean =[0.485, 0.456, 0.406], std =[0.229, 0.224, 0.225] )
-    ])
+    transform = transformer
     
     # Convert frame to PIL Image
     frame = Image.fromarray(frame)
@@ -212,9 +207,10 @@ if __name__ == "__main__":
     parser.add_argument('--game', type=str, required=True, help='Game to play')
     parser.add_argument('--mode', choices=['gather', 'bot'], required=True,
                        help='Run in data gathering mode or bot mode')
+    parser.add_argument('--preview', action='store_true', help='Preview the game window')
     args = parser.parse_args()
 
-    camera, region = initialize_capture()
+    camera, region = initialize_capture(preview=args.preview)
     if args.mode == 'gather':
         continuous_capture(camera, region, game=args.game)
     else:
